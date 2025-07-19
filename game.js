@@ -5,6 +5,13 @@ class GeometryDashGame {
         this.audioContext = null;
         this.musicGenerator = null;
         
+        // Responsive canvas setup
+        this.setupResponsiveCanvas();
+        
+        // Touch controls
+        this.touchStartTime = 0;
+        this.touchCooldown = 200; // Prevent rapid touch jumps
+        
         // Game state
         this.gameState = 'menu'; // menu, playing, gameOver
         this.score = 0;
@@ -16,7 +23,7 @@ class GeometryDashGame {
         // Player
         this.player = {
             x: 100,
-            y: this.canvas.height - 100,
+            y: 0, // Will be set in setupResponsiveCanvas
             width: 40,
             height: 40,
             velocityY: 0,
@@ -42,6 +49,75 @@ class GeometryDashGame {
         
         // Start screen
         this.showStartScreen();
+        
+        // Setup touch events
+        this.setupTouchEvents();
+    }
+    
+    setupResponsiveCanvas() {
+        const resizeCanvas = () => {
+            const container = document.getElementById('gameContainer');
+            const containerRect = container.getBoundingClientRect();
+            
+            // Set canvas size to container size
+            this.canvas.width = containerRect.width;
+            this.canvas.height = containerRect.height;
+            
+            // Update game dimensions
+            this.gameWidth = this.canvas.width;
+            this.gameHeight = this.canvas.height;
+            
+            // Adjust player position if game is running
+            if (this.gameState === 'playing') {
+                this.player.x = 100;
+                this.player.y = this.gameHeight - 100;
+            }
+        };
+        
+        // Initial resize
+        resizeCanvas();
+        
+        // Resize on window resize
+        window.addEventListener('resize', resizeCanvas);
+        
+        // Resize on orientation change (mobile)
+        window.addEventListener('orientationchange', () => {
+            setTimeout(resizeCanvas, 100);
+        });
+    }
+    
+    setupTouchEvents() {
+        // Touch start
+        this.canvas.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            const currentTime = Date.now();
+            
+            // Check cooldown
+            if (currentTime - this.touchStartTime < this.touchCooldown) {
+                return;
+            }
+            
+            this.touchStartTime = currentTime;
+            
+            if (this.gameState === 'playing') {
+                this.jump();
+            }
+        }, { passive: false });
+        
+        // Touch move (prevent scrolling)
+        this.canvas.addEventListener('touchmove', (e) => {
+            e.preventDefault();
+        }, { passive: false });
+        
+        // Touch end (prevent default behaviors)
+        this.canvas.addEventListener('touchend', (e) => {
+            e.preventDefault();
+        }, { passive: false });
+        
+        // Prevent context menu on long press
+        this.canvas.addEventListener('contextmenu', (e) => {
+            e.preventDefault();
+        });
     }
     
     setupEventListeners() {
@@ -115,7 +191,7 @@ class GeometryDashGame {
     // Check if player is on any solid surface
     checkIfGrounded() {
         // Check if on ground
-        if (this.player.y + this.player.height >= this.canvas.height - 50) {
+        if (this.player.y + this.player.height >= this.gameHeight - 50) {
             return true;
         }
         
@@ -165,8 +241,8 @@ class GeometryDashGame {
         this.player.y += this.player.velocityY;
         
         // Ground collision
-        if (this.player.y + this.player.height > this.canvas.height - 50) {
-            this.player.y = this.canvas.height - 50 - this.player.height;
+        if (this.player.y + this.player.height > this.gameHeight - 50) {
+            this.player.y = this.gameHeight - 50 - this.player.height;
             this.player.velocityY = 0;
         }
         
@@ -190,67 +266,67 @@ class GeometryDashGame {
                 // Sometimes create spike patterns
                 const spikePattern = Math.random();
                 if (spikePattern < 0.7) {
-                    // Single spike
-                    this.obstacles.push({
-                        x: this.canvas.width + this.cameraX,
-                        y: position.y,
-                        width: 40,
-                        height: 40,
-                        type: 'spike',
-                        color: '#ff4444'
-                    });
-                } else if (spikePattern < 0.85) {
-                    // Double spike
-                    this.obstacles.push({
-                        x: this.canvas.width + this.cameraX,
-                        y: position.y,
-                        width: 40,
-                        height: 40,
-                        type: 'spike',
-                        color: '#ff4444'
-                    });
-                    this.obstacles.push({
-                        x: this.canvas.width + this.cameraX + 50,
-                        y: position.y,
-                        width: 40,
-                        height: 40,
-                        type: 'spike',
-                        color: '#ff4444'
-                    });
-                } else {
-                    // Triple spike
-                    this.obstacles.push({
-                        x: this.canvas.width + this.cameraX,
-                        y: position.y,
-                        width: 40,
-                        height: 40,
-                        type: 'spike',
-                        color: '#ff4444'
-                    });
-                    this.obstacles.push({
-                        x: this.canvas.width + this.cameraX + 50,
-                        y: position.y,
-                        width: 40,
-                        height: 40,
-                        type: 'spike',
-                        color: '#ff4444'
-                    });
-                    this.obstacles.push({
-                        x: this.canvas.width + this.cameraX + 100,
-                        y: position.y,
-                        width: 40,
-                        height: 40,
-                        type: 'spike',
-                        color: '#ff4444'
-                    });
-                }
+                                    // Single spike
+                this.obstacles.push({
+                    x: this.gameWidth + this.cameraX,
+                    y: position.y,
+                    width: 40,
+                    height: 40,
+                    type: 'spike',
+                    color: '#ff4444'
+                });
+            } else if (spikePattern < 0.85) {
+                // Double spike
+                this.obstacles.push({
+                    x: this.gameWidth + this.cameraX,
+                    y: position.y,
+                    width: 40,
+                    height: 40,
+                    type: 'spike',
+                    color: '#ff4444'
+                });
+                this.obstacles.push({
+                    x: this.gameWidth + this.cameraX + 50,
+                    y: position.y,
+                    width: 40,
+                    height: 40,
+                    type: 'spike',
+                    color: '#ff4444'
+                });
+            } else {
+                // Triple spike
+                this.obstacles.push({
+                    x: this.gameWidth + this.cameraX,
+                    y: position.y,
+                    width: 40,
+                    height: 40,
+                    type: 'spike',
+                    color: '#ff4444'
+                });
+                this.obstacles.push({
+                    x: this.gameWidth + this.cameraX + 50,
+                    y: position.y,
+                    width: 40,
+                    height: 40,
+                    type: 'spike',
+                    color: '#ff4444'
+                });
+                this.obstacles.push({
+                    x: this.gameWidth + this.cameraX + 100,
+                    y: position.y,
+                    width: 40,
+                    height: 40,
+                    type: 'spike',
+                    color: '#ff4444'
+                });
+            }
             } else if (type === 'block') {
                 // Generate blocks at different heights for variety
                 const heights = [120, 150, 180];
                 const height = heights[Math.floor(Math.random() * heights.length)];
                 this.obstacles.push({
-                    x: this.canvas.width + this.cameraX,
-                    y: this.canvas.height - height,
+                    x: this.gameWidth + this.cameraX,
+                    y: this.gameHeight - height,
                     width: 40,
                     height: 60,
                     type: 'block',
@@ -262,8 +338,8 @@ class GeometryDashGame {
                 const width = Math.random() < 0.5 ? 80 : 120;
                 const height = heights[Math.floor(Math.random() * heights.length)];
                 this.platforms.push({
-                    x: this.canvas.width + this.cameraX,
-                    y: this.canvas.height - height,
+                    x: this.gameWidth + this.cameraX,
+                    y: this.gameHeight - height,
                     width: width,
                     height: 20,
                     color: '#00aaff'
@@ -277,7 +353,7 @@ class GeometryDashGame {
         
         // Ground level spike
         positions.push({
-            y: this.canvas.height - 80
+            y: this.gameHeight - 80
         });
         
         // Check for platforms to place spikes on
@@ -530,7 +606,7 @@ class GeometryDashGame {
         }
         
         // Check for blocks that we can't walk over (only if we're on ground level)
-        if (this.player.y >= this.canvas.height - 100) {
+        if (this.player.y >= this.gameHeight - 100) {
             for (const obstacle of this.obstacles) {
                 const obstacleScreenX = obstacle.x - this.cameraX;
                 const distance = obstacleScreenX - this.player.x;
@@ -554,7 +630,7 @@ class GeometryDashGame {
         }
         
         // Check for gaps only if we're on ground level and about to fall
-        if (this.player.y >= this.canvas.height - 100) {
+        if (this.player.y >= this.gameHeight - 100) {
             // Look for a gap right in front of us (much shorter distance)
             const gapCheckDistance = 30;
             let hasGroundDirectlyAhead = false;
@@ -610,7 +686,7 @@ class GeometryDashGame {
         
         // Reset player
         this.player.x = 100;
-        this.player.y = this.canvas.height - 100;
+        this.player.y = this.gameHeight - 100;
         this.player.velocityY = 0;
         this.player.isGrounded = false;
         this.player.rotation = 0;
@@ -744,22 +820,22 @@ class GeometryDashGame {
     drawBackground() {
         // Draw ground
         this.ctx.fillStyle = '#333333';
-        this.ctx.fillRect(0, this.canvas.height - 50, this.canvas.width, 50);
+        this.ctx.fillRect(0, this.gameHeight - 50, this.gameWidth, 50);
         
         // Draw grid lines
         this.ctx.strokeStyle = '#444444';
         this.ctx.lineWidth = 1;
-        for (let x = 0; x < this.canvas.width; x += 50) {
+        for (let x = 0; x < this.gameWidth; x += 50) {
             this.ctx.beginPath();
             this.ctx.moveTo(x, 0);
-            this.ctx.lineTo(x, this.canvas.height);
+            this.ctx.lineTo(x, this.gameHeight);
             this.ctx.stroke();
         }
         
-        for (let y = 0; y < this.canvas.height; y += 50) {
+        for (let y = 0; y < this.gameHeight; y += 50) {
             this.ctx.beginPath();
             this.ctx.moveTo(0, y);
-            this.ctx.lineTo(this.canvas.width, y);
+            this.ctx.lineTo(this.gameWidth, y);
             this.ctx.stroke();
         }
     }

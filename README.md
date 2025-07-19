@@ -45,12 +45,15 @@ The game features original electronic music generated in real-time:
 - **SPACE**: Jump
 - **A**: Hold to activate Auto Mode (automatically jumps and avoids obstacles)
 - **Mouse**: Click buttons for menu navigation
+- **Touch/Tap**: Tap screen to jump (mobile devices)
 
 ## Technical Details
 
 - Built with HTML5 Canvas and JavaScript
 - Uses Web Audio API for music generation
 - Responsive design with smooth 60fps gameplay
+- Mobile-optimized with touch controls
+- Responsive canvas that adapts to screen size
 - No external dependencies required
 
 ## Running the Game
